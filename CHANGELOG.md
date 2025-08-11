@@ -1,3 +1,15 @@
+## 0.0.84
+* [BREAKING_CHANGE] Updated min. Flutter version to 3.3.0 and min. Dart version to 3.0.0.
+* Recreated example project.
+* Replaced wakelock with wakelock plus.
+* Updated other dependencies.
+* Updated metadata.
+
+## 0.0.83
+* Updated dependencies.
+* Fixed Flutter 3.0 issues.
+
+
 ## 0.0.83
 * Updated dependencies
 * Fixed Flutter 3.0 issues
