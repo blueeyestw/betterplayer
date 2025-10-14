@@ -28,6 +28,15 @@ AVPictureInPictureController *_pipController;
     _disposed = false;
     _player = [[AVPlayer alloc] init];
     _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
+
+    /// 🔔 通知 AVPlayerSeekPlugin，共享 AVPlayer 實例
+    [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"BetterPlayerAVPlayerReady"
+                          object:nil
+                        userInfo:@{ @"BetterPlayerAVPlayer": _player }];
+    NSLog(@"[BetterPlayer] AVPlayer ready notification sent.");
+
+
     ///Fix for loading large videos
     if (@available(iOS 10.0, *)) {
         _player.automaticallyWaitsToMinimizeStalling = false;
@@ -71,7 +80,7 @@ AVPictureInPictureController *_pipController;
 - (void)clear {
     _isInitialized = false;
     _isPlaying = false;
-    _disposed = false;
+    _disposed = true; // ✅ 已清除
     _failedCount = 0;
     _key = nil;
     if (_player.currentItem == nil) {
@@ -519,6 +528,10 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)seekTo:(int)location {
+    if (_disposed || !_player || !_player.currentItem) {
+        NSLog(@"[BetterPlayer] ⚠️ seekTo ignored: player is nil or disposed");
+        return;
+    }
     ///When player is playing, pause video, seek to new position and start again. This will prevent issues with seekbar jumps.
     bool wasPlaying = _isPlaying;
     if (wasPlaying){
