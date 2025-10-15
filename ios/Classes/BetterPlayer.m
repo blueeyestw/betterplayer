@@ -532,20 +532,41 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         NSLog(@"[BetterPlayer] ⚠️ seekTo ignored: player is nil or disposed");
         return;
     }
-    ///When player is playing, pause video, seek to new position and start again. This will prevent issues with seekbar jumps.
+
+    // 播放中時，先暫停，seek 完後再恢復播放，避免跳動
     bool wasPlaying = _isPlaying;
-    if (wasPlaying){
+    if (wasPlaying) {
         [_player pause];
     }
 
-    [_player seekToTime:CMTimeMake(location, 1000)
-        toleranceBefore:kCMTimeZero
-         toleranceAfter:kCMTimeZero
-      completionHandler:^(BOOL finished){
-        if (wasPlaying){
-            _player.rate = _playerRate;
-        }
-    }];
+    CMTime targetTime = CMTimeMake(location, 1000);
+
+    // ✅ 僅針對 iOS 26.x (對應 iOS 18+) 使用新版 seek，避免無法跳轉問題
+    if (@available(iOS 18.0, *)) {
+        NSLog(@"[BetterPlayer] seekTo (iOS18+/26.x) -> %d ms", location);
+
+        [_player seekToTime:targetTime completionHandler:^(BOOL finished) {
+            if (wasPlaying) {
+                _player.rate = _playerRate;
+            }
+
+            if (finished) {
+                NSLog(@"[BetterPlayer] ✅ seek finished to %d ms (iOS18+)", location);
+            } else {
+                NSLog(@"[BetterPlayer] ⚠️ seek interrupted (iOS18+)");
+            }
+        }];
+    } else {
+        // 舊系統 (iOS 17.x 以下) 維持原本 seek 寫法
+        [_player seekToTime:targetTime
+            toleranceBefore:kCMTimeZero
+             toleranceAfter:kCMTimeZero
+          completionHandler:^(BOOL finished) {
+              if (wasPlaying) {
+                  _player.rate = _playerRate;
+              }
+          }];
+    }
 }
 
 - (void)setIsLooping:(bool)isLooping {
