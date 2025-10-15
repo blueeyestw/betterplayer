@@ -533,7 +533,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         return;
     }
 
-    // 播放中時，先暫停，seek 完後再恢復播放，避免跳動
+    // 記錄目前是否正在播放，seek 完再恢復播放
     bool wasPlaying = _isPlaying;
     if (wasPlaying) {
         [_player pause];
@@ -544,7 +544,15 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     // ✅ 僅針對 iOS 26.x (對應 iOS 18+) 使用新版 seek，避免無法跳轉問題
     if (@available(iOS 18.0, *)) {
         NSLog(@"[BetterPlayer] seekTo (iOS18+/26.x) -> %d ms", location);
-
+        // 如果緩衝未準備好，稍後再嘗試
+        if (![_player.currentItem isPlaybackLikelyToKeepUp]) {
+            NSLog(@"[BetterPlayer] buffering, will retry seek");
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+                           dispatch_get_main_queue(), ^{
+                        [self seekTo:location];
+                    });
+            return;
+        }
         [_player seekToTime:targetTime completionHandler:^(BOOL finished) {
             if (wasPlaying) {
                 _player.rate = _playerRate;
