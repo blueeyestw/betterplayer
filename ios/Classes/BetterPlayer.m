@@ -539,11 +539,8 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         [_player pause];
     }
 
-    CMTime targetTime = CMTimeMake(location, 1000);
-
-    // ✅ 僅針對 iOS 26.x (對應 iOS 18+) 使用新版 seek，避免無法跳轉問題
-    if (@available(iOS 18.0, *)) {
-        NSLog(@"[BetterPlayer] seekTo (iOS18+/26.x) -> %d ms", location);
+    CMTime targetTime = CMTimeMake(location, 1000);// ✅ 因iOS 26.x (對應 iOS 18+) 使用新版 seek，避免無法跳轉問題
+        NSLog(@"[BetterPlayer] seekTo  -> %d ms", location);
         // 如果緩衝未準備好，稍後再嘗試
         if (![_player.currentItem isPlaybackLikelyToKeepUp]) {
             NSLog(@"[BetterPlayer] buffering, will retry seek");
@@ -564,17 +561,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                 NSLog(@"[BetterPlayer] ⚠️ seek interrupted (iOS18+)");
             }
         }];
-    } else {
-        // 舊系統 (iOS 17.x 以下) 維持原本 seek 寫法
-        [_player seekToTime:targetTime
-            toleranceBefore:kCMTimeZero
-             toleranceAfter:kCMTimeZero
-          completionHandler:^(BOOL finished) {
-              if (wasPlaying) {
-                  _player.rate = _playerRate;
-              }
-          }];
-    }
+
 }
 
 - (void)setIsLooping:(bool)isLooping {
